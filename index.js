@@ -5,19 +5,19 @@ const {
 
 const schema = buildSchema(`
     type Query {
-        helloWorld: String
+        greeting(name: String): String
     }
 `);
 
 const resolvers = () => {
     return {
-        helloWorld: () => "Hello World GraphQL",
+        greeting: ({ name }) => `Hello ${ name }`,
     };
 };
 
 const excecuteQuery = async () => {
-    const helloWorld = await graphql(schema, '{ helloWorld }', resolvers());
-    console.log(helloWorld);
+    const greeting = await graphql(schema, '{ greeting(name: "Edson") }', resolvers());
+    console.log(greeting);
 };
 
 excecuteQuery();
