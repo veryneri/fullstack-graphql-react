@@ -83,12 +83,17 @@ const resolvers = () => {
 
 const excecuteMutation = async () => {
     const mutation = `
-        mutation {
+        mutation addCar(
+            $brand: String!,
+            $color: String!,
+            $doors: Int!,
+            $type: CarTypes!,
+        ) {
             addCar(
-                brand: "Nissan",
-                color: "Pearl",
-                doors: 4,
-                type: SUV
+                brand: $brand,
+                color: $color,
+                doors: $doors,
+                type: $type
             ) {
                 id
                 brand
@@ -97,7 +102,19 @@ const excecuteMutation = async () => {
             }
         }
     `;
-    const result = await graphql(schema, mutation, resolvers());
+    const newCar = {
+        brand: 'Nissan',
+        color: 'Pearl',
+        doors: 4,
+        type: 'SUV',
+    };
+    const result = await graphql(
+        schema,
+        mutation,
+        resolvers(),
+        null,
+        newCar,
+    );
     console.log(result.data);
 };
 
