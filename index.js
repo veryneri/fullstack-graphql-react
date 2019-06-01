@@ -1,9 +1,7 @@
 const {
-    graphql,
-    buildSchema,
-} = require('graphql');
-const express = require('express');
-const expressGraphQL = require('express-graphql');
+    ApolloServer,
+    gql,
+} = require('apollo-server');
 
 const db = {
     cars: [
@@ -38,7 +36,7 @@ const db = {
     ], 
 };
 
-const schema = buildSchema(`
+const typeDefs = gql(`
     enum CarTypes {
         Sedan
         SUV
@@ -65,13 +63,41 @@ const schema = buildSchema(`
     }
 `);
 
-const resolvers = () => {
-    return {
-        carsByType: ({type}) => db.cars.filter(car => car.type === type),
-        carById: ({id}) => db.cars.find(car => car.id === id),
-        addCar: ({ brand, color, doors, type }) => {
+const resolvers = {
+    Query: {
+        carsByType: (
+            parent,
+            args,
+            context,
+            info
+        ) => db.cars.filter(car => car.type === args.type),
+        carById: (
+            parent,
+            args,
+            context,
+            info
+        ) => db.cars.find(car => car.id === args.id),
+    },
+    Car: {
+        brand: (
+            parent,
+            args,
+            context,
+            info
+        ) => db.cars.filter(car => car.brand === parent.brand)[0].brand,
+    },
+    Mutation: {
+        addCar: (
+            _,
+            {
+                brand,
+                color,
+                doors,
+                type,
+            }
+        ) => {
             db.cars.push({
-                id: 'e',
+                id: Math.random().toString(),
                 brand,
                 color,
                 doors,
@@ -79,19 +105,13 @@ const resolvers = () => {
             });
 
             return db.cars;
-        },
-    }; 
+        }
+    },
 };
 
-const app = express();
-const port = 3000;
-app.use(
-    '/graphql',
-    expressGraphQL({
-        graphiql: true,
-        rootValue: resolvers(),
-        schema,
-    })
-);
+const server = new ApolloServer({
+    resolvers,
+    typeDefs,
+});
 
-app.listen(port, () =>  console.log(`GraphQL server is listening on port ${ port }`));
+server.listen().then(({ url }) =>  console.log(`🚀  Server ready at ${url}`));
