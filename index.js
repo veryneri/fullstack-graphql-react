@@ -2,6 +2,8 @@ const {
     graphql,
     buildSchema,
 } = require('graphql');
+const express = require('express');
+const expressGraphQL = require('express-graphql');
 
 const db = {
     cars: [
@@ -81,41 +83,15 @@ const resolvers = () => {
     }; 
 };
 
-const excecuteMutation = async () => {
-    const mutation = `
-        mutation addCar(
-            $brand: String!,
-            $color: String!,
-            $doors: Int!,
-            $type: CarTypes!,
-        ) {
-            addCar(
-                brand: $brand,
-                color: $color,
-                doors: $doors,
-                type: $type
-            ) {
-                id
-                brand
-                color
-                type
-            }
-        }
-    `;
-    const newCar = {
-        brand: 'Nissan',
-        color: 'Pearl',
-        doors: 4,
-        type: 'SUV',
-    };
-    const result = await graphql(
+const app = express();
+const port = 3000;
+app.use(
+    '/graphql',
+    expressGraphQL({
+        graphiql: true,
+        rootValue: resolvers(),
         schema,
-        mutation,
-        resolvers(),
-        null,
-        newCar,
-    );
-    console.log(result.data);
-};
+    })
+);
 
-excecuteMutation();
+app.listen(port, () =>  console.log(`GraphQL server is listening on port ${ port }`));
