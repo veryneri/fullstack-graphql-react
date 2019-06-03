@@ -70,13 +70,13 @@ const resolvers = {
             args,
             context,
             info
-        ) => db.cars.filter(car => car.type === args.type),
+        ) => context.db.cars.filter(car => car.type === args.type),
         carById: (
             parent,
             args,
             context,
             info
-        ) => db.cars.find(car => car.id === args.id),
+        ) => context.db.cars.find(car => car.id === args.id),
     },
     Car: {
         brand: (
@@ -84,7 +84,7 @@ const resolvers = {
             args,
             context,
             info
-        ) => db.cars.filter(car => car.brand === parent.brand)[0].brand,
+        ) => context.db.cars.filter(car => car.brand === parent.brand)[0].brand,
     },
     Mutation: {
         addCar: (
@@ -96,7 +96,7 @@ const resolvers = {
                 type,
             }
         ) => {
-            db.cars.push({
+            context.db.cars.push({
                 id: Math.random().toString(),
                 brand,
                 color,
@@ -104,12 +104,25 @@ const resolvers = {
                 type,
             });
 
-            return db.cars;
+            return context.db.cars;
         }
     },
 };
 
+const dbConnection = () => {
+    return new Promise(resolve => {
+        setTimeout(() => resolve(db), 2000);
+    });
+};
+
+const context = async () => {
+    return {
+        db: await dbConnection(),
+    };
+}
+
 const server = new ApolloServer({
+    context,
     resolvers,
     typeDefs,
 });
