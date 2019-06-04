@@ -2,6 +2,16 @@ const {
     ApolloServer,
     gql,
 } = require('apollo-server');
+const { RESTDataSource } = require('apollo-datasource-rest');
+const express = require('express');
+const expressPort = 9000;
+
+class CarDataAPI extends RESTDataSource {
+    async getCars() {
+        const data = await this.get(`http://localhost:${ expressPort }/cars`);
+        return data;
+    }
+}
 
 const db = {
     cars: [
@@ -52,6 +62,7 @@ const typeDefs = gql(`
     type Query {
         carsByType(type: CarTypes!): [Car]
         carById(id: ID!): Car
+        carsAPI: [Car]
     }
     type Mutation {
         addCar(
@@ -77,6 +88,12 @@ const resolvers = {
             context,
             info
         ) => context.db.cars.find(car => car.id === args.id),
+        carsAPI: async (
+            parent,
+            args,
+            context,
+            info
+        ) => await context.dataSources.carDataAPI.getCars(),
     },
     Car: {
         brand: (
@@ -121,10 +138,25 @@ const context = async () => {
     };
 }
 
+const dataSources = () => {
+    return {
+        carDataAPI: new CarDataAPI(),
+    };
+};
+
 const server = new ApolloServer({
     context,
+    dataSources,
     resolvers,
     typeDefs,
 });
 
 server.listen().then(({ url }) =>  console.log(`🚀  Server ready at ${url}`));
+
+const app = express();
+
+app.get('/cars', (req, res) => {
+    res.json(db.cars);
+});
+
+app.listen(expressPort);

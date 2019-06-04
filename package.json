@@ -19,6 +19,7 @@
   "author": "Edson Neri <edson.neri@correo.uia.mx>",
   "license": "MIT",
   "dependencies": {
+    "apollo-datasource-rest": "^0.5.0",
     "apollo-server": "^2.6.1",
     "express": "^4.17.1",
     "express-graphql": "^0.8.0",
