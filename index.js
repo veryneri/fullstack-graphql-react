@@ -1,8 +1,10 @@
 const {
     ApolloServer,
+    PubSub,
     gql,
 } = require('apollo-server');
 
+const pubSub = new PubSub();
 const db = {
     cars: [
         {
@@ -112,6 +114,9 @@ const typeDefs = gql(`
             type: CarTypes!,
         ): [Car]!
     }
+    type Subscription {
+        carAdded: Car
+    }
 `);
 
 const resolvers = {
@@ -160,14 +165,21 @@ const resolvers = {
                 color,
                 doors,
                 type,
-            }
+            },
+            context,
         ) => {
-            context.db.cars.push({
+            const newCar = {
                 id: Math.random().toString(),
                 brand,
                 color,
                 doors,
                 type,
+                parts: [{ id: '1'}],
+            };
+            context.db.cars.push(newCar);
+
+            pubSub.publish('CAR_ADDED', {
+                carAdded: newCar
             });
 
             return context.db.cars;
@@ -182,6 +194,11 @@ const resolvers = {
             const part = context.db.parts.find(part => part.partId === parent.partId);
             return part ? part.cars : [];
         },
+    },
+    Subscription: {
+        carAdded: {
+            subscribe: () => pubSub.asyncIterator(['CAR_ADDED'])
+        }
     }
 };
 
