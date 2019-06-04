@@ -2,16 +2,6 @@ const {
     ApolloServer,
     gql,
 } = require('apollo-server');
-const { RESTDataSource } = require('apollo-datasource-rest');
-const express = require('express');
-const expressPort = 9000;
-
-class CarDataAPI extends RESTDataSource {
-    async getCars() {
-        const data = await this.get(`http://localhost:${ expressPort }/cars`);
-        return data;
-    }
-}
 
 const db = {
     cars: [
@@ -21,6 +11,10 @@ const db = {
             color: 'Blue',
             doors: 4,
             type: 'Sedan',
+            parts: [
+                { id: '1' },
+                { id: '2' },
+            ],
         },
         {
             id: 'b',
@@ -28,6 +22,10 @@ const db = {
             color: 'Red',
             doors: 4,
             type: 'SUV',
+            parts: [
+                { id: '1' },
+                { id: '3' },
+            ],
         },
         {
             id: 'c',
@@ -35,6 +33,10 @@ const db = {
             color: 'White',
             doors: 4,
             type: 'Coupe',
+            parts: [
+                { id: '2' },
+                { id: '3' },
+            ],
         },
         {
             id: 'd',
@@ -42,6 +44,38 @@ const db = {
             color: 'Red',
             doors: 4,
             type: 'Coupe',
+            parts: [
+                { id: '1' },
+                { id: '3' },
+            ],
+        },
+    ],
+    parts: [
+        {
+            id: '1',
+            name: 'Transmission',
+            cars: [
+                { id: 'a' },
+                { id: 'b' },
+                { id: 'd' },
+            ],
+        },
+        {
+            id: '2',
+            name: 'Suspension',
+            cars: [
+                { id: 'a' },
+                { id: 'c' },
+            ],
+        },
+        {
+            id: '3',
+            name: 'Spoiler',
+            cars: [
+                { id: 'b' },
+                { id: 'c' },
+                { id: 'd' },
+            ],
         },
     ], 
 };
@@ -58,11 +92,17 @@ const typeDefs = gql(`
         color: String!
         doors: Int!
         type: CarTypes!
+        parts: [Part]
+    }
+    type Part {
+        id: ID!
+        name: String
+        cars: [Car]
     }
     type Query {
         carsByType(type: CarTypes!): [Car]
         carById(id: ID!): Car
-        carsAPI: [Car]
+        partById(id: ID!): Part
     }
     type Mutation {
         addCar(
@@ -76,24 +116,9 @@ const typeDefs = gql(`
 
 const resolvers = {
     Query: {
-        carsByType: (
-            parent,
-            args,
-            context,
-            info
-        ) => context.db.cars.filter(car => car.type === args.type),
-        carById: (
-            parent,
-            args,
-            context,
-            info
-        ) => context.db.cars.find(car => car.id === args.id),
-        carsAPI: async (
-            parent,
-            args,
-            context,
-            info
-        ) => await context.dataSources.carDataAPI.getCars(),
+        carById: (parent, args, context, info) => args,
+        carsByType: (parent, args, context, info) => args,
+        partById:  (parent, args, context, info) => args,
     },
     Car: {
         brand: (
@@ -101,7 +126,31 @@ const resolvers = {
             args,
             context,
             info
-        ) => context.db.cars.filter(car => car.brand === parent.brand)[0].brand,
+        ) => context.db.cars.find(car => car.id === parent.id).brand,
+        type: (
+            parent,
+            args,
+            context,
+            info
+        ) => context.db.cars.find(car => car.id === parent.id).type,
+        color: (
+            parent,
+            args,
+            context,
+            info
+        ) => context.db.cars.find(car => car.id === parent.id).color,
+        doors: (
+            parent,
+            args,
+            context,
+            info
+        ) => context.db.cars.find(car => car.id === parent.id).doors,
+        parts: (
+            parent,
+            args,
+            context,
+            info
+        ) => context.db.cars.find(car => car.id === parent.id).parts,
     },
     Mutation: {
         addCar: (
@@ -124,6 +173,16 @@ const resolvers = {
             return context.db.cars;
         }
     },
+    Part: {
+        name: (parent, args, context, info) => {
+            const part = context.db.parts.find(part => part.id === parent.id);
+            return part ? part.name : '';
+        },
+        cars: (parent, args, context, info) => {
+            const part = context.db.parts.find(part => part.partId === parent.partId);
+            return part ? part.cars : [];
+        },
+    }
 };
 
 const dbConnection = () => {
@@ -138,25 +197,10 @@ const context = async () => {
     };
 }
 
-const dataSources = () => {
-    return {
-        carDataAPI: new CarDataAPI(),
-    };
-};
-
 const server = new ApolloServer({
     context,
-    dataSources,
     resolvers,
     typeDefs,
 });
 
 server.listen().then(({ url }) =>  console.log(`🚀  Server ready at ${url}`));
-
-const app = express();
-
-app.get('/cars', (req, res) => {
-    res.json(db.cars);
-});
-
-app.listen(expressPort);
