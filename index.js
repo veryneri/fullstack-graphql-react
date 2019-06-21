@@ -112,7 +112,7 @@ const typeDefs = gql(`
             color: String!,
             doors: Int!,
             type: CarTypes!,
-        ): [Car]!
+        ): Car!
     }
     type Subscription {
         carAdded: Car
@@ -182,8 +182,8 @@ const resolvers = {
                 carAdded: newCar
             });
 
-            return context.db.cars;
-        }
+            return newCar;
+        },
     },
     Part: {
         name: (parent, args, context, info) => {
