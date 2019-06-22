@@ -105,6 +105,7 @@ const typeDefs = gql(`
         carsByType(type: CarTypes!): [Car]
         carById(id: ID!): Car
         partById(id: ID!): Part
+        cars: [Car]
     }
     type Mutation {
         addCar(
@@ -124,6 +125,7 @@ const resolvers = {
         carById: (parent, args, context, info) => args,
         carsByType: (parent, args, context, info) => args,
         partById:  (parent, args, context, info) => args,
+        cars:  (parent, args, context, info) => context.db.cars,
     },
     Car: {
         brand: (
