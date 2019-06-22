@@ -1,9 +1,14 @@
+const express = require('express');
+const {createServer } = require('http');
+const { PubSub } = require('apollo-server');
 const {
     ApolloServer,
-    PubSub,
     gql,
-} = require('apollo-server');
+} = require('apollo-server-express');
 
+const app = express();
+const httpServer = createServer(app);
+const port = 4000;
 const pubSub = new PubSub();
 const db = {
     cars: [
@@ -219,5 +224,12 @@ const server = new ApolloServer({
     resolvers,
     typeDefs,
 });
-
-server.listen().then(({ url }) =>  console.log(`🚀  Server ready at ${url}`));
+server.applyMiddleware({
+    path: '/graphql',
+    app,
+});
+server.installSubscriptionHandlers(httpServer);
+httpServer.listen(
+    { port },
+    () => console.log(`🚀  Server ready at http://localhost:${port}/`)
+);
