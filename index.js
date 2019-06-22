@@ -203,9 +203,7 @@ const resolvers = {
 };
 
 const dbConnection = () => {
-    return new Promise(resolve => {
-        setTimeout(() => resolve(db), 2000);
-    });
+    return new Promise(resolve => resolve(db));
 };
 
 const context = async () => {
